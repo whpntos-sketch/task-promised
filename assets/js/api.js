@@ -1,0 +1,1 @@
+const API='PASTE_GAS_URL';function api(d){return fetch(API,{method:'POST',body:JSON.stringify(d)}).then(r=>r.json())}
