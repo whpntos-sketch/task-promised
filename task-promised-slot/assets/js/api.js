@@ -1,1 +1,1 @@
-const API='https://script.google.com/macros/s/AKfycbw2jT669k4wbdLK1gOtKRIW0Ui20MWcJ8bAbfrbR_d9J3CZZ9wNBI6z0doywTQLxtzY/exec'; export const api=d=>fetch(API,{method:'POST',body:JSON.stringify(d)}).then(r=>r.json());
+const API="https://script.google.com/macros/s/AKfycbw2jT669k4wbdLK1gOtKRIW0Ui20MWcJ8bAbfrbR_d9J3CZZ9wNBI6z0doywTQLxtzY/exec"; export const api=d=>fetch(API,{method:'POST',body:JSON.stringify(d)}).then(r=>r.json());
