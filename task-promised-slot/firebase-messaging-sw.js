@@ -1,1 +1,0 @@
-self.addEventListener('push',e=>{const d=e.data.json();self.registration.showNotification(d.notification.title,{body:d.notification.body});});

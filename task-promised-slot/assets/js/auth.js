@@ -1,1 +1,0 @@
-function login(){const e=prompt('Email');const n=prompt('Name');api({action:'login',email:e,name:n}).then(r=>{localStorage.email=e;localStorage.role=r.role;location.reload()})}
