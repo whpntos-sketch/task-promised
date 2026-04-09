@@ -1,0 +1,1 @@
+indexedDB.open('taskslotdb',1);
