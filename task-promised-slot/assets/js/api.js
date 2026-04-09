@@ -7,7 +7,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw2jT669k4wbdLK1gOtKRIW
  */
 export async function api(payload) {
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(https://script.google.com/macros/s/AKfycbw2jT669k4wbdLK1gOtKRIW0Ui20MWcJ8bAbfrbR_d9J3CZZ9wNBI6z0doywTQLxtzY/exec, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
