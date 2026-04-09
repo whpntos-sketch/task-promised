@@ -1,0 +1,5 @@
+source: docs
+destination: docs/_site
+sass:
+  sass_dir: assets/css
+  style: compressed
