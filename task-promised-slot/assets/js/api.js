@@ -1,0 +1,1 @@
+const API='PASTE_WEBAPP_URL'; export const api=d=>fetch(API,{method:'POST',body:JSON.stringify(d)}).then(r=>r.json());
