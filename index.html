@@ -1,1 +1,109 @@
-<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Task Promised Slot</title><link rel='manifest' href='manifest.json'><script src='https://cdn.tailwindcss.com'></script></head><body class='bg-gray-100 min-h-screen'><div class='max-w-md mx-auto p-6'><h1 class='text-2xl font-bold mb-4'>Booking Slot</h1><button onclick='login()' class='w-full bg-blue-600 text-white py-2 rounded mb-4'>Login Google</button><div id='slots' class='space-y-2'></div></div><script src='assets/js/api.js'></script><script src='assets/js/auth.js'></script></body></html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Slot Booking</title>
+https://cdn.tailwindcss.comscript>
+</head>
+
+<body class="bg-gray-100 p-6">
+
+<div id="login" class="max-w-sm mx-auto bg-white p-6 rounded shadow">
+  <h2 class="text-xl font-bold mb-4">Login</h2>
+  <input id="uid" class="border p-2 w-full mb-2" placeholder="User ID">
+  <input id="pw" type="password" class="border p-2 w-full mb-4" placeholder="Password">
+  <button onclick="login()" class="bg-blue-500 text-white w-full py-2">Login</button>
+</div>
+
+<div id="dash" class="hidden">
+  <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
+  <div id="adminPanel" class="hidden mb-4">
+    <button onclick="loadStats()" class="bg-green-600 text-white px-4 py-2">Export Statistik</button>
+    <pre id="stats" class="bg-gray-200 p-2 mt-2"></pre>
+  </div>
+  <table class="table-auto w-full bg-white shadow">
+    <thead>
+      <tr class="bg-gray-200">
+        <th>Jam</th><th>Status</th><th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="grid"></tbody>
+  </table>
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycby5a_EVhV12RFJLHXjQOlCQZe3shxKyETsAMlE3okvlfj-DslZD_yMEh2u5QdHxvtni/exec";
+let TOKEN = "", ROLE = "";
+
+function login(){
+ fetch(API,{
+  method:'POST',
+  body:JSON.stringify({
+    action:'login',
+    uid:uid.value,
+    password:pw.value
+  })
+ }).then(r=>r.json()).then(j=>{
+  if(j.success){
+    TOKEN=j.token; ROLE=j.role;
+    login.style.display='none';
+    dash.classList.remove('hidden');
+    if(ROLE==='admin') adminPanel.classList.remove('hidden');
+    loadSlots();
+  }
+ });
+}
+
+function loadSlots(){
+ fetch(API,{
+  method:'POST',
+  body:JSON.stringify({action:'weekly',token:TOKEN})
+ }).then(r=>r.json()).then(j=>{
+  grid.innerHTML='';
+  j.slots.forEach(s=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${s.time}</td>
+      <td class="${s.status==='Available'?'text-green-600':s.status==='Booked'?'text-red-600':'text-blue-600'}">${s.status}</td>
+      <td>
+        ${s.status==='Available'?
+          `<button onclick="book('${s.slotId}')" class="bg-blue-500 text-white px-2">Book</button>`
+          : ROLE==='admin'?
+          `<select onchange="adminUpdate('${s.slotId}',this.value)">
+            <option>-</option>
+            <option>Available</option>
+            <option>Finish</option>
+          </select>`
+          :''
+        }
+      </td>`;
+    grid.appendChild(tr);
+  });
+ });
+}
+
+function book(slotId){
+ fetch(API,{
+  method:'POST',
+  body:JSON.stringify({action:'book',token:TOKEN,slotId})
+ }).then(r=>r.json()).then(()=>loadSlots());
+}
+
+function adminUpdate(slotId,status){
+ fetch(API,{
+  method:'POST',
+  body:JSON.stringify({action:'adminUpdate',token:TOKEN,slotId,status})
+ }).then(()=>loadSlots());
+}
+
+function loadStats(){
+ fetch(API,{
+  method:'POST',
+  body:JSON.stringify({action:'stats',token:TOKEN})
+ }).then(r=>r.json()).then(j=>{
+  stats.textContent=JSON.stringify(j.stats,null,2);
+ });
+}
+</script>
+</body>
+</html>
