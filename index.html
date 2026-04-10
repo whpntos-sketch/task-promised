@@ -1,108 +1,107 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Slot Booking</title>
-https://cdn.tailwindcss.comscript>
+  <meta charset="UTF-8">
+  <title>Booking Slots</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-<body class="bg-gray-100 p-6">
-
-<div id="login" class="max-w-sm mx-auto bg-white p-6 rounded shadow">
-  <h2 class="text-xl font-bold mb-4">Login</h2>
-  <input id="uid" class="border p-2 w-full mb-2" placeholder="User ID">
-  <input id="pw" type="password" class="border p-2 w-full mb-4" placeholder="Password">
-  <button onclick="login()" class="bg-blue-500 text-white w-full py-2">Login</button>
-</div>
-
-<div id="dash" class="hidden">
-  <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
-  <div id="adminPanel" class="hidden mb-4">
-    <button onclick="loadStats()" class="bg-green-600 text-white px-4 py-2">Export Statistik</button>
-    <pre id="stats" class="bg-gray-200 p-2 mt-2"></pre>
+<div id="app" class="w-full max-w-4xl p-6 bg-white rounded shadow">
+  <!-- Login Form -->
+  <div id="login" class="space-y-4">
+    <h1 class="text-2xl font-bold">Login</h1>
+    <input id="uid" type="text" placeholder="User ID" class="w-full p-2 border rounded">
+    <input id="pw" type="password" placeholder="Password" class="w-full p-2 border rounded">
+    <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded">Login</button>
+    <p id="loginMsg" class="text-red-500"></p>
   </div>
-  <table class="table-auto w-full bg-white shadow">
-    <thead>
-      <tr class="bg-gray-200">
-        <th>Jam</th><th>Status</th><th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="grid"></tbody>
-  </table>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="hidden">
+    <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
+    <div id="slotsGrid" class="grid grid-cols-1 gap-2"></div>
+    <button onclick="logout()" class="mt-4 bg-gray-500 text-white p-2 rounded">Logout</button>
+  </div>
 </div>
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycby5a_EVhV12RFJLHXjQOlCQZe3shxKyETsAMlE3okvlfj-DslZD_yMEh2u5QdHxvtni/exec";
-let TOKEN = "", ROLE = "";
+let token = null;
+let role = null;
 
-function login(){
- fetch(API,{
-  method:'POST',
-  body:JSON.stringify({
-    action:'login',
-    uid:uid.value,
-    password:pw.value
-  })
- }).then(r=>r.json()).then(j=>{
-  if(j.success){
-    TOKEN=j.token; ROLE=j.role;
-    login.style.display='none';
-    dash.classList.remove('hidden');
-    if(ROLE==='admin') adminPanel.classList.remove('hidden');
-    loadSlots();
-  }
- });
-}
-
-function loadSlots(){
- fetch(API,{
-  method:'POST',
-  body:JSON.stringify({action:'weekly',token:TOKEN})
- }).then(r=>r.json()).then(j=>{
-  grid.innerHTML='';
-  j.slots.forEach(s=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${s.time}</td>
-      <td class="${s.status==='Available'?'text-green-600':s.status==='Booked'?'text-red-600':'text-blue-600'}">${s.status}</td>
-      <td>
-        ${s.status==='Available'?
-          `<button onclick="book('${s.slotId}')" class="bg-blue-500 text-white px-2">Book</button>`
-          : ROLE==='admin'?
-          `<select onchange="adminUpdate('${s.slotId}',this.value)">
-            <option>-</option>
-            <option>Available</option>
-            <option>Finish</option>
-          </select>`
-          :''
-        }
-      </td>`;
-    grid.appendChild(tr);
+async function login() {
+  const uid = document.getElementById('uid').value;
+  const pw = document.getElementById('pw').value;
+  const res = await fetch(API, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'login', uid, password: pw })
   });
- });
+  const data = await res.json();
+  if (data.success) {
+    token = data.token;
+    role = data.role;
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    loadSlots();
+  } else {
+    document.getElementById('loginMsg').innerText = "Login gagal";
+  }
 }
 
-function book(slotId){
- fetch(API,{
-  method:'POST',
-  body:JSON.stringify({action:'book',token:TOKEN,slotId})
- }).then(r=>r.json()).then(()=>loadSlots());
+async function loadSlots() {
+  const res = await fetch(API, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'weekly', token })
+  });
+  const data = await res.json();
+  const grid = document.getElementById('slotsGrid');
+  grid.innerHTML = '';
+  data.slots.forEach(slot => {
+    const color = slot.status === 'Available' ? 'bg-green-200' :
+                  slot.status === 'Booked' ? 'bg-red-200' : 'bg-blue-200';
+    let html = `<div class="p-2 ${color} rounded flex justify-between items-center">
+                  <span>${slot.date} ${slot.time} - ${slot.status} ${slot.bookedBy}</span>`;
+    if (slot.status === 'Available' && role === 'user') {
+      html += `<button onclick="bookSlot('${slot.slotId}')" class="bg-blue-500 text-white px-2 py-1 rounded">Book</button>`;
+    }
+    if (role === 'admin') {
+      html += `<select onchange="adminUpdate('${slot.slotId}', this.value)" class="ml-2 border rounded">
+                 <option value="">--Update--</option>
+                 <option value="Available">Available</option>
+                 <option value="Finish">Finish</option>
+               </select>`;
+    }
+    html += `</div>`;
+    grid.innerHTML += html;
+  });
 }
 
-function adminUpdate(slotId,status){
- fetch(API,{
-  method:'POST',
-  body:JSON.stringify({action:'adminUpdate',token:TOKEN,slotId,status})
- }).then(()=>loadSlots());
+async function bookSlot(slotId) {
+  const res = await fetch(API, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'book', token, slotId })
+  });
+  const data = await res.json();
+  alert(data.success ? "Booking sukses" : "Booking gagal");
+  loadSlots();
 }
 
-function loadStats(){
- fetch(API,{
-  method:'POST',
-  body:JSON.stringify({action:'stats',token:TOKEN})
- }).then(r=>r.json()).then(j=>{
-  stats.textContent=JSON.stringify(j.stats,null,2);
- });
+async function adminUpdate(slotId, status) {
+  const res = await fetch(API, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'adminUpdate', token, slotId, status })
+  });
+  const data = await res.json();
+  alert(data.success ? "Update sukses" : "Update gagal");
+  loadSlots();
+}
+
+function logout() {
+  token = null;
+  role = null;
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
 }
 </script>
 </body>
