@@ -1,109 +1,123 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>BOOKING REHAN</title>
-  <!-- Gunakan file CSS hasil build Tailwind (production ready) -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.1/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+                    status;
+                    option.textContent = status;
 
-<div id="app" class="w-full max-w-4xl p-6 bg-white rounded shadow">
-  <!-- Login Form -->
-  <div id="login" class="space-y-4">
-    <h1 class="text-2xl font-bold">Login</h1>
-    <input id="uid" type="text" placeholder="User ID" class="w-full p-2 border rounded">
-    <input id="pw" type="password" placeholder="Password" class="w-full p-2 border rounded">
-    <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded">Login</button>
-    <p id="loginMsg" class="text-red-500"></p>
-  </div>
+                    if (status === slot.status) {
+                        option.selected = true;
+                    }
 
-  <!-- Dashboard -->
-  <div id="dashboard" class="hidden">
-    <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
-    <div id="slotsGrid" class="grid grid-cols-1 gap-2"></div>
-    <button onclick="logout()" class="mt-4 bg-gray-500 text-white p-2 rounded">Logout</button>
-  </div>
-</div>
+                    select.appendChild(option);
+                });
 
-<script>
-const API = "https://script.google.com/macros/s/AKfycby5a_EVhV12RFJLHXjQOlCQZe3shxKyETsAMlE3okvlfj-DslZD_yMEh2u5QdHxvtni/exec";
-let token = null;
-let role = null;
+                select.addEventListener('change', async (e) => {
+                    const newStatus = e.target.value;
 
-async function login() {
-  const uid = document.getElementById('uid').value;
-  const pw = document.getElementById('pw').value;
-  const res = await fetch(API, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'login', uid, password: pw })
-  });
-  const data = await res.json();
-  if (data.success) {
-    token = data.token;
-    role = data.role;
-    document.getElementById('login').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
-    loadSlots();
-  } else {
-    document.getElementById('loginMsg').innerText = "Login gagal";
-  }
-}
+                    if (newStatus !== slot.status) {
+                        await changeSlotStatus(slot.slotId, newStatus);
+                    }
+                });
 
-async function loadSlots() {
-  const res = await fetch(API, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'weekly', token })
-  });
-  const data = await res.json();
-  const grid = document.getElementById('slotsGrid');
-  grid.innerHTML = '';
-  data.slots.forEach(slot => {
-    const color = slot.status === 'Available' ? 'bg-green-200' :
-                  slot.status === 'Booked' ? 'bg-red-200' : 'bg-blue-200';
-    let html = `<div class="p-2 ${color} rounded flex justify-between items-center">
-                  <span>${slot.date} ${slot.time} - ${slot.status} ${slot.bookedBy}</span>`;
-    if (slot.status === 'Available' && role === 'user') {
-      html += `<button onclick="bookSlot('${slot.slotId}')" class="bg-blue-500 text-white px-2 py-1 rounded">Book</button>`;
-    }
-    if (role === 'admin') {
-      html += `<select onchange="adminUpdate('${slot.slotId}', this.value)" class="ml-2 border rounded">
-                 <option value="">--Update--</option>
-                 <option value="Available">Available</option>
-                 <option value="Finish">Finish</option>
-               </select>`;
-    }
-    html += `</div>`;
-    grid.innerHTML += html;
-  });
-}
+                // Add booking info for booked slots
+                if (slot.bookedBy) {
+                    const info = document.createElement('div');
+                    info.className = 'text-xs text-neutral-600 px-2 py-1';
+                    info.textContent = `By: ${slot.bookedBy}`;
 
-async function bookSlot(slotId) {
-  const res = await fetch(API, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'book', token, slotId })
-  });
-  const data = await res.json();
-  alert(data.success ? "Booking sukses" : "Booking gagal");
-  loadSlots();
-}
+                    container.appendChild(info);
+                }
 
-async function adminUpdate(slotId, status) {
-  const res = await fetch(API, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'adminUpdate', token, slotId, status })
-  });
-  const data = await res.json();
-  alert(data.success ? "Update sukses" : "Update gagal");
-  loadSlots();
-}
+                container.appendChild(select);
+            } else {
+                // User: Button
+                const button = document.createElement('button');
+                button.className = 'slot-button';
+                button.setAttribute('data-testid', `slot-${slot.slotId}`);
 
-function logout() {
-  token = null;
-  role = null;
-  document.getElementById('dashboard').classList.add('hidden');
-  document.getElementById('login').classList.remove('hidden');
-}
-</script>
-</body>
-</html>
+                // Apply status styling
+                if (slot.status === 'Available') {
+                    button.className +=
+                        ' bg-white border-2 border-green-600 text-green-700 hover:bg-green-50';
+                    button.textContent = 'BOOK';
+
+                    button.addEventListener('click', () => {
+                        bookSlot(slot.slotId);
+                    });
+
+                } else if (slot.status === 'Booked') {
+                    button.className +=
+                        ' bg-red-50 border border-red-200 text-red-800 cursor-not-allowed';
+
+                    button.textContent =
+                        slot.bookedBy === currentUser.uid
+                            ? 'BOOKED (Anda)'
+                            : 'BOOKED';
+
+                    button.disabled = true;
+
+                } else if (slot.status === 'Finish') {
+                    button.className +=
+                        ' bg-blue-50 border border-blue-200 text-blue-800 cursor-not-allowed';
+
+                    button.textContent = 'FINISH';
+                    button.disabled = true;
+                }
+
+                container.appendChild(button);
+            }
+
+            return container;
+        }
+
+        // ============= BOOKING ACTION =============
+
+        async function bookSlot(slotId) {
+            if (!confirm('Apakah Anda yakin ingin booking slot ini?')) {
+                return;
+            }
+
+            const result = await apiCall('bookSlot', {
+                uid: currentUser.uid,
+                slotId
+            });
+
+            if (result && result.success) {
+                alert('✓ ' + result.message);
+                loadWeeklyData();
+            } else {
+                alert('✗ ' + (result?.message || 'Terjadi kesalahan'));
+            }
+        }
+
+        // ============= ADMIN CHANGE STATUS =============
+
+        async function changeSlotStatus(slotId, newStatus) {
+            const result = await apiCall('changeStatus', {
+                uid: currentUser.uid,
+                slotId,
+                newStatus
+            });
+
+            if (result && result.success) {
+                alert('✓ ' + result.message);
+                loadWeeklyData();
+            } else {
+                alert('✗ ' + (result?.message || 'Terjadi kesalahan'));
+            }
+        }
+
+        // ============= LOGOUT =============
+
+        document
+            .getElementById('logoutBtn')
+            .addEventListener('click', () => {
+                currentUser = null;
+                currentWeekStart = null;
+                slotsData = [];
+
+                document.getElementById('loginForm').reset();
+                hideError();
+                showView('loginView');
+            });
+
+        // ============= INITIAL LOAD =============
+        // Show login view on page load
+        showView('loginView');
